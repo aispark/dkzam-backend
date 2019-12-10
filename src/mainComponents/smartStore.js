@@ -53,7 +53,8 @@ async function placeOrder(socketId) {
 
   sendLog(logChannel, `발주확인 시작 ${sw.read(0) / 1000} seconds`);
   const browser = await puppeteer.launch({
-    headless: false,
+    // headless: false,
+    slowMo: 20,
     args: [
       // "--start-maximized", // you can also use '--start-fullscreen'
       "--no-sandbox",
@@ -187,12 +188,18 @@ async function uploadInvoice(socketId) {
 
   const sw = new Stopwatch(true);
 
+  sendLog(
+    logChannel,
+    `발주확인 완료 목록 등록 시작 ${sw.read(0) / 1000} seconds`
+  );
   const browser = await puppeteer.launch({
     // headless: false,
-    executablePath,
+    // executablePath,
     slowMo: 20,
     args: [
-      "--start-maximized" // you can also use '--start-fullscreen'
+      // "--start-maximized" // you can also use '--start-fullscreen'
+      "--no-sandbox",
+      "--disable-setuid-sandbox"
     ]
   });
 
@@ -206,6 +213,9 @@ async function uploadInvoice(socketId) {
     );
 
     await page.setViewport({ width: 1920, height: 1080 });
+
+    await navigationPromise;
+    sendLog(logChannel, `로그인 시작 ${sw.read(0) / 1000} seconds`);
 
     await page.waitForSelector(".login_form #id");
     await page.click(".login_form #id");
@@ -328,14 +338,16 @@ async function exportOrder(socketId) {
 
   const sw = new Stopwatch(true);
 
-  sendLog(logChannel, `주문 가져오기 시작 ${sw.read(0) / 1000} seconds`);
+  sendLog(logChannel, `발주확인 완료 시작 ${sw.read(0) / 1000} seconds`);
 
   const browser = await puppeteer.launch({
     // headless: false,
-    executablePath,
+    // executablePath,
     slowMo: 20,
     args: [
-      "--start-maximized" // you can also use '--start-fullscreen'
+      // "--start-maximized" // you can also use '--start-fullscreen'
+      "--no-sandbox",
+      "--disable-setuid-sandbox"
     ]
   });
   try {
