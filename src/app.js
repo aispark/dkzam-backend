@@ -2,7 +2,7 @@ var app = require("express")();
 var server = require("http").createServer(app);
 var cors = require("cors");
 // http server를 socket.io server로 upgrade한다
-app.io = require("socket.io")(server);
+app.io = require("socket.io")(server, { origins: "*:*" });
 require("dotenv").config();
 require("express-async-errors");
 
@@ -25,11 +25,17 @@ app.use(function(req, res, next) {
   next();
 });
 
+// app.use(cors());
+
 // app.all("/*", function(req, res, next) {
 //   res.header("Access-Control-Allow-Origin", "*");
 //   res.header("Access-Control-Allow-Headers", "X-Requested-With");
 //   next();
 // });
+
+app.get("/", async (req, res) => {
+  res.sendFile(`${__dirname}/index.html`);
+});
 
 //발주완료 목록
 app.get("/smartStore/orderList", async (req, res) => {
