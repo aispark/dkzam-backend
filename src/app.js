@@ -1,17 +1,8 @@
 var app = require("express")();
 var server = require("http").createServer(app);
+var cors = require("cors");
 // http server를 socket.io server로 upgrade한다
-app.io = require("socket.io")(server, {
-  handlePreflightRequest: (req, res) => {
-    const headers = {
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Access-Control-Allow-Origin": req.headers.origin, //or the specific origin you want to give access to,
-      "Access-Control-Allow-Credentials": true
-    };
-    res.writeHead(200, headers);
-    res.end();
-  }
-});
+app.io = require("socket.io")(server);
 require("dotenv").config();
 require("express-async-errors");
 
@@ -23,11 +14,13 @@ import {
 import { alpsUploadOrder, alpsExportInvoice } from "@/mainComponents/alps";
 import { importOrder, importInvoice } from "@/mainComponents/excelHandler";
 
-app.all("/*", function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "X-Requested-With");
-  next();
-});
+app.use(cors());
+
+// app.all("/*", function(req, res, next) {
+//   res.header("Access-Control-Allow-Origin", "*");
+//   res.header("Access-Control-Allow-Headers", "X-Requested-With");
+//   next();
+// });
 
 //발주완료 목록
 app.get("/smartStore/orderList", async (req, res) => {
