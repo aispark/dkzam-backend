@@ -74,8 +74,8 @@ app.io.on("connection", async function(socket) {
   });
 });
 
-server.listen(3000, function() {
-  console.log("Socket IO server listening on port 3000");
+server.listen(process.env.PORT || 3000, function() {
+  console.log(`Socket IO server listening on port ${process.env.PORT || 3000}`);
 });
 
 export default app;
