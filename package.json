@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "nodemon --exec babel-node ./src/app.js --presets babel-preset-env",
+    "dev": "nodemon --exec babel-node ./src/app.js --presets @babel/preset-env",
     "build": "babel src -d build",
     "start": "node build/app.js"
   },
@@ -18,10 +18,12 @@
     "xlsx": "^0.15.3"
   },
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-core": "^6.26.3",
-    "babel-loader": "^8.0.6",
-    "babel-plugin-module-resolver": "^3.2.0",
-    "babel-preset-env": "^1.7.0"
+    "@babel/cli": "^7.7.5",
+    "@babel/core": "^7.7.5",
+    "@babel/node": "^7.7.4",
+    "@babel/plugin-transform-runtime": "^7.7.6",
+    "@babel/preset-env": "^7.7.6",
+    "@babel/runtime": "^7.7.6",
+    "babel-plugin-module-resolver": "^3.2.0"
   }
 }
