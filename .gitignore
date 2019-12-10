@@ -22,3 +22,4 @@ yarn-error.log*
 .env
 
 src/order.xlsx
+build

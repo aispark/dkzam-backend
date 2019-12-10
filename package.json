@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "nodemon --exec babel-node ./src/app.js --presets babel-preset-env"
+    "dev": "nodemon --exec babel-node ./src/app.js --presets babel-preset-env",
+    "build": "babel src -d build",
+    "start": "node build/app.js"
   },
   "dependencies": {
     "dotenv": "^8.2.0",
