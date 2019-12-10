@@ -1,7 +1,7 @@
 var app = require("express")();
 var server = require("http").createServer(app);
 // http server를 socket.io server로 upgrade한다
-app.io = require("socket.io")(server);
+app.io = require("socket.io")(server, { origins: "*:*" });
 require("dotenv").config();
 require("express-async-errors");
 
