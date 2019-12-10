@@ -4,8 +4,8 @@ const puppeteer = require("puppeteer");
 const XLSX = require("xlsx");
 const Stopwatch = require("statman-stopwatch");
 
-let executablePath =
-  "node_modules/puppeteer/.local-chromium/win64-706915/chrome-win/chrome.exe";
+// let executablePath =
+//   "node_modules/puppeteer/.local-chromium/win64-706915/chrome-win/chrome.exe";
 
 // if (process.env.NODE_ENV === "production")
 //   executablePath = `${__dirname}/${executablePath}`;
@@ -55,7 +55,9 @@ async function placeOrder(socketId) {
   const browser = await puppeteer.launch({
     headless: false,
     args: [
-      "--start-maximized" // you can also use '--start-fullscreen'
+      // "--start-maximized", // you can also use '--start-fullscreen'
+      "--no-sandbox",
+      "--disable-setuid-sandbox"
     ]
   });
 
