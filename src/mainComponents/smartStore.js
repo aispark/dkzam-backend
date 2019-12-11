@@ -224,9 +224,10 @@ async function uploadInvoice(param) {
               msgBox
             );
 
-            // fs.unlink(dest, err =>
-            //   console.log("smartstore invoice temp file delete", err)
-            // );
+            fs.unlink(dest, err =>
+              console.log("smartstore invoice temp file delete", err)
+            );
+
             sendLog(logChannel, `${text} ${sw.read(0) / 1000} seconds`);
           }
         }
