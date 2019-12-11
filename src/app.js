@@ -51,7 +51,13 @@ app.get("/smartStore/orderList", async (req, res) => {
 
 //발주완료 목록 등록
 app.get("/alps/uploadOrder", async (req, res) => {
-  const result = await alpsUploadOrder(req.query.socketId);
+  const result = await alpsUploadOrder(req.query);
+  res.send(result);
+});
+
+//발주완료 목록 파일 import
+app.get("/smartStore/importOrderList", async (req, res) => {
+  const result = await importOrder();
   res.send(result);
 });
 
