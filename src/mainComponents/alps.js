@@ -3,12 +3,16 @@ import app from "@/app";
 import puppeteer from "puppeteer";
 import XLSX from "xlsx";
 import Stopwatch from "statman-stopwatch";
-import { importInvoice } from "@/mainComponents/excelHandler";
+import {
+  importInvoice,
+  exportSmartStoreOrder
+} from "@/mainComponents/excelHandler";
 import {
   alpsLogin,
   waitForClick,
   launchPuppeteer
 } from "@/mainComponents/commonPuppeteer";
+import fs from "fs";
 
 //alps 송장 export
 async function alpsExportInvoice(socketId) {
@@ -130,7 +134,8 @@ async function alpsExportInvoice(socketId) {
 }
 
 //발주확인 완료 등록
-async function alpsUploadOrder(socketId) {
+async function alpsUploadOrder(param) {
+  const socketId = param.socketId;
   const logChannel = "orderProcess:log";
   const sendLog = (channel, message) =>
     app.io.to(`${socketId}`).emit(channel, message);
@@ -200,7 +205,10 @@ async function alpsUploadOrder(socketId) {
 
     //파일 업로드
     const fileInput = await frame_2032.$("input[type=file]");
-    await fileInput.uploadFile(EXPORT_ORDER_PATH);
+
+    const dest = `${process.cwd()}/${new Date().getTime()}`;
+    await exportSmartStoreOrder(dest, param.items);
+    await fileInput.uploadFile(dest);
 
     await frame_2032.waitForSelector(".msgBoxContent span");
 
@@ -214,6 +222,10 @@ async function alpsUploadOrder(socketId) {
     sendLog(
       logChannel,
       `롯데택배 일괄주문접수 완료!!! ${sw.read(0) / 1000} seconds`
+    );
+
+    fs.unlink(dest, err =>
+      console.log("smartstore order temp file delete", err)
     );
 
     return { message: "성공", status: 200 };
