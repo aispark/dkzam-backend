@@ -1,17 +1,15 @@
 import { EXPORT_ORDER_PATH, EXPORT_INVOICE_PATH } from "@/constants";
 import app from "@/app";
-const puppeteer = require("puppeteer");
-const XLSX = require("xlsx");
-const Stopwatch = require("statman-stopwatch");
-
-// let executablePath =
-//   "node_modules/puppeteer/.local-chromium/win64-706915/chrome-win/chrome.exe";
-
-// if (process.env.NODE_ENV === "production")
-//   executablePath = `${__dirname}/${executablePath}`;
-
-// const executablePath =
-//   "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe";
+import {
+  smartStoreLogin,
+  launchPuppeteer,
+  getOrderSendManagement,
+  waitForClick
+} from "@/mainComponents/commonPuppeteer";
+import { exportSmartStoreInvoice } from "@/mainComponents/excelHandler";
+import XLSX from "xlsx";
+import Stopwatch from "statman-stopwatch";
+import fs from "fs";
 
 /*
     PRODUCT_ORDER_ID  //상품주문번호
@@ -52,15 +50,9 @@ async function placeOrder(socketId) {
   const sw = new Stopwatch(true);
 
   sendLog(logChannel, `발주확인 시작 ${sw.read(0) / 1000} seconds`);
-  const browser = await puppeteer.launch({
-    // headless: false,
-    slowMo: 20,
-    args: [
-      // "--start-maximized", // you can also use '--start-fullscreen'
-      "--no-sandbox",
-      "--disable-setuid-sandbox"
-    ]
-  });
+
+  //puppeteer 초기화
+  const browser = await launchPuppeteer();
 
   try {
     const page = await browser.newPage();
@@ -76,20 +68,8 @@ async function placeOrder(socketId) {
     await navigationPromise;
     sendLog(logChannel, `로그인 시작 ${sw.read(0) / 1000} seconds`);
 
-    await page.waitForSelector(".login_form #id");
-    await page.click(".login_form #id");
-
-    await page.type(".login_form #id", "aispark");
-
-    await page.click(".login_form #pw");
-    await page.type(".login_form #pw", "xldkfk@031");
-
-    await page.waitForSelector(
-      "#container > #content > #frmNIDLogin > .login_form > .btn_global"
-    );
-    await page.click(
-      "#container > #content > #frmNIDLogin > .login_form > .btn_global"
-    );
+    //로그인
+    await smartStoreLogin(page);
 
     sendLog(logChannel, `로그인 완료 ${sw.read(0) / 1000} seconds`);
 
@@ -97,30 +77,11 @@ async function placeOrder(socketId) {
 
     await navigationPromise;
 
-    await page.waitForSelector(
-      ".scroller > div > .metisMenu > li:nth-child(2) > a"
-    );
-    await page.click(".scroller > div > .metisMenu > li:nth-child(2) > a");
+    const frame_71 = await getOrderSendManagement(page);
+    sendLog(logChannel, `발주/발송관리 화면 이동 ${sw.read(0) / 1000} seconds`);
 
-    await page.waitForSelector(
-      ".metisMenu > .active > .submenu > li:nth-child(4) > a"
-    );
-    await page.click(".metisMenu > .active > .submenu > li:nth-child(4) > a");
-
-    sendLog(logChannel, `발주/발송관리 클릭 ${sw.read(0) / 1000} seconds`);
-
-    await page.waitFor(3000);
-
-    let frames = await page.frames();
-
-    const frame_71 = frames.find(f => {
-      return f.url() === "https://sell.smartstore.naver.com/o/n/sale/delivery";
-    });
-
-    await frame_71.waitForSelector(
-      ".npay_status_list > ._summaryNEW_ORDERS > .status_filtering > .number > ._newOrdersCnt"
-    );
-    await frame_71.click(
+    await waitForClick(
+      frame_71,
       ".npay_status_list > ._summaryNEW_ORDERS > .status_filtering > .number > ._newOrdersCnt"
     );
 
@@ -140,18 +101,15 @@ async function placeOrder(socketId) {
     } = await finalResponse.json();
 
     //그리드 전체선택
-    await frame_71.waitForSelector(
+    await waitForClick(
+      frame_71,
       ".xhdr > .hdr > tbody > tr > td > .hdrcell > input"
     );
-    await frame_71.click(".xhdr > .hdr > tbody > tr > td > .hdrcell > input");
-
     await page.waitFor(200);
 
     //발주확인 버튼 클릭
-    await frame_71.waitForSelector(
-      ".napy_sub_content > .npay_section > .npay_button_major > .left_box > button:nth-child(1)"
-    );
-    await frame_71.click(
+    await waitForClick(
+      frame_71,
       ".napy_sub_content > .npay_section > .npay_button_major > .left_box > button:nth-child(1)"
     );
 
@@ -162,7 +120,7 @@ async function placeOrder(socketId) {
 
     page.on("dialog", async dialog => {
       sendLog(logChannel, `${dialog.message()} ${sw.read(0) / 1000} seconds`);
-      dialog.accept();
+      await dialog.accept();
     });
 
     await page.waitFor(1000);
@@ -181,8 +139,9 @@ async function placeOrder(socketId) {
   }
 }
 
-async function uploadInvoice(socketId) {
-  const logChannel = "orderProcess:log";
+async function uploadInvoice(param) {
+  const socketId = param.socketId;
+  const logChannel = "invoiceProcess:log";
   const sendLog = (channel, message) =>
     app.io.to(`${socketId}`).emit(channel, message);
 
@@ -192,16 +151,9 @@ async function uploadInvoice(socketId) {
     logChannel,
     `발주확인 완료 목록 등록 시작 ${sw.read(0) / 1000} seconds`
   );
-  const browser = await puppeteer.launch({
-    // headless: false,
-    // executablePath,
-    slowMo: 20,
-    args: [
-      // "--start-maximized" // you can also use '--start-fullscreen'
-      "--no-sandbox",
-      "--disable-setuid-sandbox"
-    ]
-  });
+
+  //puppeteer 초기화
+  const browser = await launchPuppeteer();
 
   try {
     const page = await browser.newPage();
@@ -217,20 +169,7 @@ async function uploadInvoice(socketId) {
     await navigationPromise;
     sendLog(logChannel, `로그인 시작 ${sw.read(0) / 1000} seconds`);
 
-    await page.waitForSelector(".login_form #id");
-    await page.click(".login_form #id");
-
-    await page.type(".login_form #id", process.env.VUE_APP_NAVER_ID);
-
-    await page.click(".login_form #pw");
-    await page.type(".login_form #pw", process.env.VUE_APP_NAVER_PASSWORD);
-
-    await page.waitForSelector(
-      "#container > #content > #frmNIDLogin > .login_form > .btn_global"
-    );
-    await page.click(
-      "#container > #content > #frmNIDLogin > .login_form > .btn_global"
-    );
+    await smartStoreLogin(page);
 
     sendLog(logChannel, `로그인 완료 ${sw.read(0) / 1000} seconds`);
 
@@ -238,80 +177,63 @@ async function uploadInvoice(socketId) {
 
     await navigationPromise;
 
-    await page.waitForSelector(
-      ".scroller > div > .metisMenu > li:nth-child(2) > a"
-    );
-    await page.click(".scroller > div > .metisMenu > li:nth-child(2) > a");
-
-    await page.waitForSelector(
-      ".metisMenu > .active > .submenu > li:nth-child(4) > a"
-    );
-    await page.click(".metisMenu > .active > .submenu > li:nth-child(4) > a");
-
-    sendLog(logChannel, `발주/발송관리 클릭 ${sw.read(0) / 1000} seconds`);
-
-    await page.waitFor(3000);
-
-    let frames = await page.frames();
-
-    const frame_71 = frames.find(f => {
-      return f.url() === "https://sell.smartstore.naver.com/o/n/sale/delivery";
-    });
-
-    //발주확인 완료
-    await frame_71.waitForSelector(
-      ".npay_status_list > ._summaryDELIVERY_READY > .status_filtering > .number > ._deliveryReadyCnt"
-    );
-    await frame_71.click(
-      ".npay_status_list > ._summaryDELIVERY_READY > .status_filtering > .number > ._deliveryReadyCnt"
-    );
+    const frame_71 = await getOrderSendManagement(page);
+    sendLog(logChannel, `발주/발송관리 화면 이동 ${sw.read(0) / 1000} seconds`);
 
     //엑셀 일괄발송
-    await frame_71.waitForSelector(
-      ".npay_button_major > .left_box > .npay_btn_common:nth-child(3)"
-    );
-    await frame_71.click(
+    await waitForClick(
+      frame_71,
       ".npay_button_major > .left_box > .npay_btn_common:nth-child(3)"
     );
 
     await navigationPromise;
 
+    sendLog(logChannel, `엑셀 일괄발송 팝업 오픈 ${sw.read(0) / 1000} seconds`);
+
     browser.on("targetcreated", async target => {
-      //
-      // This block intercepts all new events
-      if (target.type() === "page") {
-        // if it tab/page
-        const popup = await target.page(); // declare it
+      try {
+        // This block intercepts all new events
+        if (target.type() === "page") {
+          // if it tab/page
+          const popup = await target.page(); // declare it
 
-        //엑셀일괄 발송 팝업
-        if (
-          popup.url() ===
-          "https://sell.smartstore.naver.com/o/sale/delivery/batchDispatchPop"
-        ) {
-          const [fileChooser] = await Promise.all([
-            popup.waitForFileChooser({ timeout: 10000 }),
-            popup.click(".browse-button") // some button that triggers file selection
-            // popup.click("#uploadedFile") // some button that triggers file selection
-          ]);
+          //엑셀일괄 발송 팝업
+          if (
+            popup.url() ===
+            "https://sell.smartstore.naver.com/o/sale/delivery/batchDispatchPop"
+          ) {
+            const [fileChooser] = await Promise.all([
+              popup.waitForFileChooser({ timeout: 10000 }),
+              popup.click(".browse-button") // some button that triggers file selection
+              // popup.click("#uploadedFile") // some button that triggers file selection
+            ]);
 
-          await fileChooser.accept([EXPORT_INVOICE_PATH]);
-          await popup.waitFor(2000);
+            const dest = `${process.cwd()}/${new Date().getTime()}`;
+            await exportSmartStoreInvoice(dest, param.items);
+            await fileChooser.accept([dest]);
+            await popup.waitFor(2000);
 
-          await popup.waitForSelector(".btn_b");
-          await popup.click(".btn_b");
+            //엑셀일괄 submit
+            await waitForClick(popup, ".btn_b");
 
-          await popup.waitFor(2000);
+            await popup.waitFor(2000);
 
-          const msgBox = await popup.$("._successList .result_txt");
-          const text = await popup.evaluate(
-            msgBox => msgBox.textContent,
-            msgBox
-          );
+            const msgBox = await popup.$("._successList .result_txt");
+            const text = await popup.evaluate(
+              msgBox => msgBox.textContent,
+              msgBox
+            );
 
-          sendLog(logChannel, `${text} ${sw.read(0) / 1000} seconds`);
-          // console.log("송장파일첨부", sw.read(0) / 1000, "seconds");
-          // resolve();
+            // fs.unlink(dest, err =>
+            //   console.log("smartstore invoice temp file delete", err)
+            // );
+            sendLog(logChannel, `${text} ${sw.read(0) / 1000} seconds`);
+          }
         }
+      } catch (error) {
+        console.log("popup error", error);
+      } finally {
+        await browser.close();
       }
     });
 
@@ -326,7 +248,6 @@ async function uploadInvoice(socketId) {
       error: error
     };
   } finally {
-    await browser.close();
   }
 }
 
@@ -340,16 +261,8 @@ async function exportOrder(socketId) {
 
   sendLog(logChannel, `발주확인 완료 시작 ${sw.read(0) / 1000} seconds`);
 
-  const browser = await puppeteer.launch({
-    // headless: false,
-    // executablePath,
-    slowMo: 20,
-    args: [
-      // "--start-maximized" // you can also use '--start-fullscreen'
-      "--no-sandbox",
-      "--disable-setuid-sandbox"
-    ]
-  });
+  const browser = await launchPuppeteer();
+
   try {
     const page = await browser.newPage();
 
@@ -364,20 +277,7 @@ async function exportOrder(socketId) {
     await navigationPromise;
     sendLog(logChannel, `로그인 시작 ${sw.read(0) / 1000} seconds`);
 
-    await page.waitForSelector(".login_form #id");
-    await page.click(".login_form #id");
-
-    await page.type(".login_form #id", process.env.VUE_APP_NAVER_ID);
-
-    await page.click(".login_form #pw");
-    await page.type(".login_form #pw", process.env.VUE_APP_NAVER_PASSWORD);
-
-    await page.waitForSelector(
-      "#container > #content > #frmNIDLogin > .login_form > .btn_global"
-    );
-    await page.click(
-      "#container > #content > #frmNIDLogin > .login_form > .btn_global"
-    );
+    await smartStoreLogin(page);
 
     sendLog(logChannel, `로그인 완료 ${sw.read(0) / 1000} seconds`);
 
@@ -385,30 +285,11 @@ async function exportOrder(socketId) {
 
     await navigationPromise;
 
-    await page.waitForSelector(
-      ".scroller > div > .metisMenu > li:nth-child(2) > a"
-    );
-    await page.click(".scroller > div > .metisMenu > li:nth-child(2) > a");
+    const frame_71 = await getOrderSendManagement(page);
+    sendLog(logChannel, `발주/발송관리 화면 이동 ${sw.read(0) / 1000} seconds`);
 
-    await page.waitForSelector(
-      ".metisMenu > .active > .submenu > li:nth-child(4) > a"
-    );
-    await page.click(".metisMenu > .active > .submenu > li:nth-child(4) > a");
-
-    sendLog(logChannel, `발주/발송관리 클릭 ${sw.read(0) / 1000} seconds`);
-
-    await page.waitFor(3000);
-
-    let frames = await page.frames();
-
-    const frame_71 = frames.find(f => {
-      return f.url() === "https://sell.smartstore.naver.com/o/n/sale/delivery";
-    });
-
-    await frame_71.waitForSelector(
-      ".npay_status_list > ._summaryDELIVERY_READY > .status_filtering > .number > ._deliveryReadyCnt"
-    );
-    await frame_71.click(
+    await waitForClick(
+      frame_71,
       ".npay_status_list > ._summaryDELIVERY_READY > .status_filtering > .number > ._deliveryReadyCnt"
     );
 
