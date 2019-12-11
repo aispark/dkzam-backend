@@ -23,3 +23,4 @@ yarn-error.log*
 
 src/order.xlsx
 build
+src/invoice.xlsx
