@@ -8,10 +8,9 @@ async function importOrder() {
 
     let resultList = [];
     workbook.SheetNames.forEach(function(sheetName) {
-      resultList = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-      resultList = resultList.map((item, index) => {
-        item.no = index + 1;
-        return item;
+      resultList = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+        header: 0,
+        defval: ""
       });
     });
 
@@ -25,6 +24,25 @@ async function importOrder() {
       error: error
     };
   }
+}
+
+async function exportSmartStoreOrder(dest, orderIdList) {
+  let { resultList } = await importOrder();
+  resultList = resultList.filter(item =>
+    orderIdList.some(orderId => orderId === item.productOrderId)
+  );
+
+  /* make the worksheet */
+  const ws = XLSX.utils.json_to_sheet(resultList);
+
+  /* add to workbook */
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "sheet0");
+
+  XLSX.writeFile(wb, dest, {
+    bookType: "xlsx",
+    bookSST: "false"
+  });
 }
 
 async function exportSmartStoreInvoice(dest, invoiceNoList) {
@@ -92,4 +110,9 @@ async function importInvoice() {
   }
 }
 
-export { importOrder, importInvoice, exportSmartStoreInvoice };
+export {
+  importOrder,
+  importInvoice,
+  exportSmartStoreInvoice,
+  exportSmartStoreOrder
+};
