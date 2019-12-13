@@ -206,7 +206,7 @@ async function alpsUploadOrder(param) {
     //파일 업로드
     const fileInput = await frame_2032.$("input[type=file]");
 
-    const dest = `${process.cwd()}/${new Date().getTime()}`;
+    const dest = `${process.cwd()}/${new Date().getTime()}.xlsx`;
     await exportSmartStoreOrder(dest, param.items);
     await fileInput.uploadFile(dest);
 

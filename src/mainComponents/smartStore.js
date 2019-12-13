@@ -208,7 +208,7 @@ async function uploadInvoice(param) {
               // popup.click("#uploadedFile") // some button that triggers file selection
             ]);
 
-            const dest = `${process.cwd()}/${new Date().getTime()}`;
+            const dest = `${process.cwd()}/${new Date().getTime()}.xlsx`;
             await exportSmartStoreInvoice(dest, param.items);
             await fileChooser.accept([dest]);
             await popup.waitFor(2000);
