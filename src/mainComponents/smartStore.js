@@ -107,35 +107,32 @@ async function placeOrder(socketId) {
     );
     await page.waitFor(200);
 
+    page.on("dialog", async dialog => {
+      sendLog(logChannel, `${dialog.message()} ${sw.read(0) / 1000} seconds`);
+      await dialog.accept();
+      sendLog(
+        logChannel,
+        `발주버튼 클릭 ( ${totalElements}건 ) ${sw.read(0) / 1000} seconds`
+      );
+      await browser.close();
+    });
+
     //발주확인 버튼 클릭
     await waitForClick(
       frame_71,
       ".napy_sub_content > .npay_section > .npay_button_major > .left_box > button:nth-child(1)"
     );
 
-    sendLog(
-      logChannel,
-      `발주버튼 클릭 ( ${totalElements}건 ) ${sw.read(0) / 1000} seconds`
-    );
-
-    page.on("dialog", async dialog => {
-      sendLog(logChannel, `${dialog.message()} ${sw.read(0) / 1000} seconds`);
-      await dialog.accept();
-    });
-
-    await page.waitFor(1000);
-
     return { message: "성공", status: 200, resultList: contentMap(content) };
   } catch (error) {
     console.log(error);
+    await browser.close();
     return {
       message: "오류 발생",
       status: 500,
       resultList: [],
       error: error
     };
-  } finally {
-    await browser.close();
   }
 }
 
@@ -179,16 +176,6 @@ async function uploadInvoice(param) {
 
     const frame_71 = await getOrderSendManagement(page);
     sendLog(logChannel, `발주/발송관리 화면 이동 ${sw.read(0) / 1000} seconds`);
-
-    //엑셀 일괄발송
-    await waitForClick(
-      frame_71,
-      ".npay_button_major > .left_box > .npay_btn_common:nth-child(3)"
-    );
-
-    await navigationPromise;
-
-    sendLog(logChannel, `엑셀 일괄발송 팝업 오픈 ${sw.read(0) / 1000} seconds`);
 
     browser.on("targetcreated", async target => {
       try {
@@ -238,17 +225,27 @@ async function uploadInvoice(param) {
       }
     });
 
+    //엑셀 일괄발송
+    await waitForClick(
+      frame_71,
+      ".npay_button_major > .left_box > .npay_btn_common:nth-child(3)"
+    );
+
+    await navigationPromise;
+
+    sendLog(logChannel, `엑셀 일괄발송 팝업 오픈 ${sw.read(0) / 1000} seconds`);
+
     // console.log("엑셀일괄발송 완료", sw.read(0) / 1000, "seconds");
     return { message: "성공", status: 200 };
   } catch (error) {
     console.log(error);
+    await browser.close();
     return {
       message: "오류 발생",
       status: 500,
       resultList: [],
       error: error
     };
-  } finally {
   }
 }
 
