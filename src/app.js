@@ -1,4 +1,5 @@
-var app = require("express")();
+var express = require("express");
+var app = express();
 var server = require("http").createServer(app);
 var cors = require("cors");
 // http server를 socket.io server로 upgrade한다
@@ -32,9 +33,14 @@ app.use(function(req, res, next) {
 //   res.header("Access-Control-Allow-Headers", "X-Requested-With");
 //   next();
 // });
+app.use(express.static("public"));
 
 app.get("/", async (req, res) => {
+  console.log(`경로 !!! ${__dirname}`);
   res.sendFile(`${__dirname}/index.html`);
+});
+app.get("/.well-known", (req, res) => {
+  res.send("test");
 });
 
 //발주확인 처리
