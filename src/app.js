@@ -1,9 +1,27 @@
+var fs = require("fs");
 var express = require("express");
 var app = express();
 var server = require("http").createServer(app);
-var cors = require("cors");
+var history = require("connect-history-api-fallback");
+const logger = require("morgan");
+
+// var options = {
+//   key: fs.readFileSync("./ssl/key.pem"),
+//   cert: fs.readFileSync("./ssl/cert.pem")
+// };
+// var server = require("https").createServer(options, app);
+
+// server.listen(443, function() {
+//   console.log(`Socket IO server listening on port 443`);
+// });
+
+server.listen(80, function() {
+  console.log(`Socket IO server listening on port ${80}`);
+});
+
 // http server를 socket.io server로 upgrade한다
-app.io = require("socket.io")(server, { origins: "*:*" });
+// app.io = require("socket.io")(server, { origins: "*:*" });
+app.io = require("socket.io")(server);
 require("dotenv").config();
 require("express-async-errors");
 
@@ -16,6 +34,7 @@ import { alpsUploadOrder, alpsExportInvoice } from "@/mainComponents/alps";
 import { importOrder, importInvoice } from "@/mainComponents/excelHandler";
 
 app.use(function(req, res, next) {
+  // res.header("Access-Control-Allow-Origin", "https://dkzam.netlify.com");
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Credentials", true);
   res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS");
@@ -25,22 +44,18 @@ app.use(function(req, res, next) {
   );
   next();
 });
+app.use(logger("dev"));
 
-// app.use(cors());
-
-// app.all("/*", function(req, res, next) {
-//   res.header("Access-Control-Allow-Origin", "*");
-//   res.header("Access-Control-Allow-Headers", "X-Requested-With");
-//   next();
-// });
+app.use(
+  history({
+    verbose: true,
+    index: `index.html`
+  })
+);
 app.use(express.static("public"));
 
 app.get("/", async (req, res) => {
-  console.log(`경로 !!! ${__dirname}`);
   res.sendFile(`${__dirname}/index.html`);
-});
-app.get("/.well-known", (req, res) => {
-  res.send("test");
 });
 
 //발주확인 처리
@@ -103,9 +118,5 @@ app.get("/alps/importInvoiceList", async (req, res) => {
 //     console.log("user disconnected: " + socket.id);
 //   });
 // });
-
-server.listen(process.env.PORT || 3000, function() {
-  console.log(`Socket IO server listening on port ${process.env.PORT || 3000}`);
-});
 
 export default app;
