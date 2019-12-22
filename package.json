@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "nodemon --exec babel-node ./src/app.js --presets @babel/preset-env",
+    "dev": "set NODE_ENV=development&& nodemon --exec babel-node ./src/app.js --presets @babel/preset-env",
     "prebuild": "npx copy ./public/**/* ./build/public",
     "build": "babel src -d build",
     "start": "node build/app.js"

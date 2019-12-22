@@ -14,9 +14,16 @@ const logger = require("morgan");
 // server.listen(443, function() {
 //   console.log(`Socket IO server listening on port 443`);
 // });
+let port = 80;
+if (process.env.NODE_ENV === "production") {
+  console.log("Production Mode");
+} else if (process.env.NODE_ENV === "development") {
+  console.log("Development Mode");
+  port = 3000;
+}
 
-server.listen(80, function() {
-  console.log(`Socket IO server listening on port ${80}`);
+server.listen(port, function() {
+  console.log(`Socket IO server listening on port ${port}`);
 });
 
 // http server를 socket.io server로 upgrade한다
