@@ -4,6 +4,8 @@ var app = express();
 var server = require("http").createServer(app);
 var history = require("connect-history-api-fallback");
 const logger = require("morgan");
+const multer = require("multer");
+const bodyParser = require("body-parser");
 
 // var options = {
 //   key: fs.readFileSync("./ssl/key.pem"),
@@ -14,6 +16,7 @@ const logger = require("morgan");
 // server.listen(443, function() {
 //   console.log(`Socket IO server listening on port 443`);
 // });
+
 let port = 80;
 if (process.env.NODE_ENV === "production") {
   console.log("Production Mode");
@@ -39,6 +42,10 @@ import {
 } from "@/mainComponents/smartStore";
 import { alpsUploadOrder, alpsExportInvoice } from "@/mainComponents/alps";
 import { importOrder, importInvoice } from "@/mainComponents/excelHandler";
+import { recognize } from "@/mainComponents/imageToText";
+
+app.use(bodyParser.json()); // support json encoded bodies
+app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
 app.use(function(req, res, next) {
   // res.header("Access-Control-Allow-Origin", "https://dkzam.netlify.com");
@@ -60,6 +67,30 @@ app.use(
   })
 );
 app.use(express.static("public"));
+app.use("/upload", express.static("upload"));
+
+let upload = multer({
+  dest: "upload/"
+});
+
+app.post("/create", upload.single("imgFile"), function(req, res, next) {
+  // 3. 파일 객체
+  // let file = req.file;
+
+  // 4. 파일 정보
+  // let result = {
+  //   originalName: file.originalname,
+  //   size: file.size
+  // };
+  console.log("req.query.socketId", req.query.socketId);
+  console.log(req.file);
+  const data = {
+    filePath: req.file.path,
+    socketId: req.query.socketId
+  };
+
+  recognize(data);
+});
 
 app.get("/", async (req, res) => {
   res.sendFile(`${__dirname}/index.html`);
@@ -74,6 +105,13 @@ app.get("/smartStore/placeOrder", async (req, res) => {
 //발주완료 목록
 app.get("/smartStore/orderList", async (req, res) => {
   const result = await exportOrder(req.query.socketId);
+  res.send(result);
+});
+
+//발주완료 목록 등록
+app.post("/alps/externalUploadOrder", async (req, res) => {
+  console.log(req.body);
+  const result = await alpsUploadOrder(req.body);
   res.send(result);
 });
 
