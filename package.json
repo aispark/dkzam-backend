@@ -6,7 +6,7 @@
     "dev": "set NODE_ENV=development&& nodemon --exec babel-node ./src/app.js --presets @babel/preset-env",
     "prebuild": "npx copy ./public/**/* ./build/public",
     "build": "babel src -d build",
-    "start": "node build/web.js"
+    "start": "node build/app.js"
   },
   "dependencies": {
     "body-parser": "^1.19.0",
