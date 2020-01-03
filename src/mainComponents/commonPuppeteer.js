@@ -75,7 +75,7 @@ async function alpsLogin(page) {
 async function launchPuppeteer(options) {
   return await puppeteer.launch({
     // executablePath,
-    // headless: false,
+    headless: false,
     slowMo: 20,
     args: [
       // "--start-maximized", // you can also use '--start-fullscreen'

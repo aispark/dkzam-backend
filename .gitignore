@@ -25,3 +25,7 @@ src/order.xlsx
 build
 src/invoice.xlsx
 public
+
+upload
+eng.traineddata
+kor.traineddata

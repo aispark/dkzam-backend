@@ -5,7 +5,8 @@ import XLSX from "xlsx";
 import Stopwatch from "statman-stopwatch";
 import {
   importInvoice,
-  exportSmartStoreOrder
+  exportSmartStoreOrder,
+  exportExternalOrder
 } from "@/mainComponents/excelHandler";
 import {
   alpsLogin,
@@ -194,6 +195,10 @@ async function alpsUploadOrder(param) {
     await page.waitFor(500);
     await page.keyboard.press("ArrowDown");
     await page.waitFor(500);
+    if (param.isExternal) {
+      await page.keyboard.press("ArrowDown");
+      await page.waitFor(500);
+    }
     await page.keyboard.press(String.fromCharCode(13));
 
     //타이틀 있음 체크
@@ -207,7 +212,11 @@ async function alpsUploadOrder(param) {
     const fileInput = await frame_2032.$("input[type=file]");
 
     const dest = `${process.cwd()}/${new Date().getTime()}.xlsx`;
-    await exportSmartStoreOrder(dest, param.items);
+    if (param.isExternal) {
+      await exportExternalOrder(dest, param.items);
+    } else {
+      await exportSmartStoreOrder(dest, param.items);
+    }
     await fileInput.uploadFile(dest);
 
     await frame_2032.waitForSelector(".msgBoxContent span");

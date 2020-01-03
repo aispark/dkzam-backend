@@ -45,6 +45,42 @@ async function exportSmartStoreOrder(dest, orderIdList) {
   });
 }
 
+async function exportExternalOrder(dest, orderList) {
+  orderList = orderList.map((item, index) => {
+    const data = {
+      // 주문번호	보내는사람(지정)	전화번호1(지정)	전화번호2(지정)	우편번호(지정)	주소(지정)	받는사람	전화번호1	전화번호2	우편번호	주소	상품명1	상품상세1	수량(A타입)	배송메시지	운임구분
+      주문번호: "",
+      보내는사람지정: item.dispatcher,
+      전화번호1지정: item.dispatcherTel1,
+      전화번호2지정: item.dispatcherTel2,
+      우편번호지정: item.dispatcherPostNo,
+      주소지정: item.dispatcherAddr,
+      받는사람: item.productOrderAddressName,
+      전화번호1: item.productOrderAddressTelno1,
+      전화번호2: "",
+      우편번호: item.productOrderAddressZipcode,
+      주소: `${item.productOrderAddressAddress} ${item.productOrderAddressAddressDetail}`,
+      상품명1: item.oproductOrderProductProductName,
+      상품상세1: item.oproductOrderProductProductName,
+      수량: item.productOrderDetailOrderQuantity,
+      배송메시지: item.productOrderMemo
+    };
+    return data;
+  });
+
+  /* make the worksheet */
+  const ws = XLSX.utils.json_to_sheet(orderList);
+
+  /* add to workbook */
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "sheet0");
+
+  XLSX.writeFile(wb, dest, {
+    bookType: "xlsx",
+    bookSST: "false"
+  });
+}
+
 async function exportSmartStoreInvoice(dest, invoiceNoList) {
   let { resultList } = await importInvoice();
 
@@ -114,5 +150,6 @@ export {
   importOrder,
   importInvoice,
   exportSmartStoreInvoice,
-  exportSmartStoreOrder
+  exportSmartStoreOrder,
+  exportExternalOrder
 };
